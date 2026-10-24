@@ -60,6 +60,6 @@ $('txt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/Mobi/
 $('f').onsubmit=async e=>{e.preventDefault();const t=$('txt').value.trim();if(!t)return;if(!tok||!me)return setup();
 try{const r=await fetch(API,{method:'POST',headers:{...hdr(),'Content-Type':'application/json'},body:JSON.stringify({body:`**[${me}]** ${t}`})});
 if(!r.ok)throw new Error(r.status+(r.status===401?' – zły token':r.status===403||r.status===404?' – brak uprawnień tokenu':''));$('txt').value='';last='';await load();$('msgs').scrollTop=1e9}catch(err){alert('Nie wysłano: '+err.message)}};
-load();setInterval(()=>{if(!document.hidden)load()},localStorage.getItem("tok")?10000:65000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
+load();setInterval(()=>{if(!document.hidden)load()},localStorage.getItem("bc_tok")?10000:65000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>
