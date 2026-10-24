@@ -23,12 +23,21 @@ form button{border:0;border-radius:50%;width:44px;height:44px;background:#22c55e
 #setup input,#setup select{width:100%;font-size:16px;padding:9px;margin:6px 0 12px;border-radius:10px;border:1px solid #8886;background:var(--in);color:var(--fg)}
 #setup button{width:100%;padding:11px;border:0;border-radius:10px;background:#22c55e;color:#fff;font-size:16px;font-weight:600}
 small{color:var(--muted)}
+#hint{font-size:12px;color:var(--muted);text-align:center;padding:0 10px calc(env(safe-area-inset-bottom) + 6px);background:var(--card)}
+form{padding-bottom:6px!important}
+.ov{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+.ov>div{background:var(--card);color:var(--fg);border-radius:16px;padding:18px;max-width:420px;width:100%}
+.big{display:block;width:100%;padding:14px;margin:8px 0;border:0;border-radius:12px;background:#22c55e;color:#fff;font-size:18px;font-weight:600}
+#out{background:#dc2626}details{margin-top:12px}
+#toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#111c;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;display:none;z-index:10;text-align:center}
 </style></head><body>
-<header><b>💬 Bot Czat</b><a id="gh" target="_blank">GitHub</a><button id="out" hidden>Wyloguj</button></header>
-<div id="msgs"></div><div id="st">Ładowanie…</div>
-<form id="f"><textarea id="txt" rows="1" placeholder="Napisz wiadomość…"></textarea><button title="Wyślij">➤</button></form>
+<header><b>💬 Bot Czat</b><a id="gh" target="_blank">Napisz na GitHubie</a><button id="menu" type="button">⚙︎</button></header>
+<div id="msgs"></div><div id="st">Ładowanie…</div><div id="toast"></div>
+<form id="f"><textarea id="txt" rows="1" placeholder="Napisz wiadomość…"></textarea><button title="Wyślij">➤</button></form><div id="hint">Możesz też po prostu napisać do swojego Grok Bota, przekaże wiadomość.</div>
+<div id="pick" class="ov"><div><h3 style="margin-top:0">Kim jesteś?</h3><button class="big" data-w="Kacper">Kacper</button><button class="big" data-w="Jakub">Jakub</button></div></div>
+<div id="sett" class="ov"><div><h3 style="margin-top:0">Ustawienia</h3><p id="whoami"></p><button class="big" id="chg">Zmień, kim jestem</button><details><summary>Zaawansowane</summary><p><small>Opcjonalnie: logowanie tokenem pozwala wysyłać bez przechodzenia na GitHub.</small></p><button class="big" id="adv">Zaloguj tokenem</button><button class="big" id="out" hidden>Wyloguj (usuń token)</button></details><p><a href="#" id="sclose">Zamknij</a></p></div></div>
 <div id="setup"><div>
-<h3 style="margin-top:0">Kim jesteś?</h3>
+<h3 style="margin-top:0">Logowanie tokenem (opcjonalne)</h3>
 <select id="who"><option>Kacper</option><option>Jakub</option></select>
 <label>Token GitHub (fine-grained)</label><input id="tok" type="password" autocomplete="off" placeholder="github_pat_…">
 <small>Utwórz go na <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a>: dostęp tylko do repo <b>bot-czat</b>, uprawnienia <b>Pull requests</b> i <b>Issues</b>: Read and write.<br>Token zostaje tylko w tym telefonie (localStorage) i trafia wyłącznie do api.github.com.</small>
@@ -36,7 +45,7 @@ small{color:var(--muted)}
 </div></div>
 <script>
 const O='kacperkretowicz-wq',R='bot-czat',N=2,U=`https://github.com/${O}/${R}/pull/${N}`,API=`https://api.github.com/repos/${O}/${R}/issues/${N}/comments`;
-const $=id=>document.getElementById(id);$('gh').href=U;
+const $=id=>document.getElementById(id);$('gh').href=U+'#new_comment_field';
 let tok=localStorage.getItem('bc_tok'),me=localStorage.getItem('bc_me'),last='';
 const COLORS={Wspólny:'#2563eb','Team Bot':'#9333ea',Kacper:'#16a34a',Jakub:'#ea580c'};
 function col(n){if(COLORS[n])return COLORS[n];let h=0;for(const c of n)h=h*31+c.charCodeAt(0)&0xffff;return`hsl(${h%360},60%,45%)`}
@@ -46,7 +55,7 @@ function md(s){s=esc(s);return s.replace(/`([^`\n]+)`/g,'<code>$1</code>').repla
 function parse(c){let b=c.body||'',name=c.user.login,via='';const m=b.match(/^\s*\*\*\[([^\]]+)\]\*\*:?\s*/);
 if(m){name=m[1];b=b.slice(m[0].length);const k=b.match(/^\s*\[(Kacper|Jakub)\]:?\s*/);if(k){via=name;name=k[1];b=b.slice(k[0].length)}}return{name,via,b}}
 function hdr(){return tok?{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'}:{Accept:'application/vnd.github+json'}}
-function ui(){$('out').hidden=!tok}ui();
+function ui(){$('out').hidden=!tok;$('adv').hidden=!!tok}ui();
 async function load(){try{let all=[],p=1;for(;;){const r=await fetch(`${API}?per_page=100&page=${p}`,{headers:hdr()});if(!r.ok)throw new Error(r.status===403?'limit API, dodaj token':r.status);const d=await r.json();all=all.concat(d);if(d.length<100)break;p++}
 const key=all.map(c=>c.id+c.updated_at).join();if(key!==last){last=key;const box=$('msgs'),bottom=box.scrollTop+box.clientHeight>=box.scrollHeight-80||!box.innerHTML;
 box.innerHTML=all.map(c=>{const{name,via,b}=parse(c);return`<div class="m ${me&&name===me?'me':''}"><div class="n" style="color:${col(name)}">${esc(name)}${via?` <span class="via">przez ${esc(via)}</span>`:''}</div>${md(b)}<div class="t">${new Date(c.created_at).toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'})}</div></div>`}).join('')||'<div id="st">Brak wiadomości</div>';
@@ -55,11 +64,23 @@ $('st').textContent=`${all.length} wiadomości · ${new Date().toLocaleTimeStrin
 function setup(){$('setup').style.display='flex';if(me)$('who').value=me}
 $('save').onclick=()=>{const t=$('tok').value.trim();if(!t)return alert('Wklej token');tok=t;me=$('who').value;localStorage.setItem('bc_tok',tok);localStorage.setItem('bc_me',me);$('tok').value='';$('setup').style.display='none';ui();last='';load()};
 $('cancel').onclick=e=>{e.preventDefault();$('setup').style.display='none'};
-$('out').onclick=()=>{if(!confirm('Wylogować i usunąć token z tego urządzenia?'))return;localStorage.removeItem('bc_tok');localStorage.removeItem('bc_me');tok=me=null;ui();last='';load()};
+$('out').onclick=()=>{$('sett').style.display='none';if(!confirm('Wylogować i usunąć token z tego urządzenia?'))return;localStorage.removeItem('bc_tok');tok=null;ui();last='';load()};
 $('txt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/Mobi/.test(navigator.userAgent)){e.preventDefault();$('f').requestSubmit()}});
-$('f').onsubmit=async e=>{e.preventDefault();const t=$('txt').value.trim();if(!t)return;if(!tok||!me)return setup();
-try{const r=await fetch(API,{method:'POST',headers:{...hdr(),'Content-Type':'application/json'},body:JSON.stringify({body:`**[${me}]** ${t}`})});
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',4000)}
+function copy(t){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(t).catch(()=>fb(t));return Promise.resolve(fb(t))}
+function fb(t){const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.focus();a.select();try{document.execCommand('copy')}catch(e){}a.remove()}
+let pending=null;
+document.querySelectorAll('#pick .big').forEach(b=>b.onclick=()=>{me=b.dataset.w;localStorage.setItem('bc_me',me);$('pick').style.display='none';last='';load();if(pending){const p=pending;pending=null;p()}});
+$('menu').onclick=()=>{$('whoami').textContent=me?'Jesteś: '+me:'Nie wybrano osoby';ui();$('sett').style.display='flex'};
+$('sclose').onclick=e=>{e.preventDefault();$('sett').style.display='none'};
+$('chg').onclick=()=>{$('sett').style.display='none';$('pick').style.display='flex'};
+$('adv').onclick=()=>{$('sett').style.display='none';setup()};
+$('f').onsubmit=async e=>{e.preventDefault();const t=$('txt').value.trim();if(!t)return;
+if(!me){pending=()=>$('f').requestSubmit();$('pick').style.display='flex';return}
+const body=`**[${me}]** ${t}`;
+if(!tok){const w=window.open(U+'#new_comment_field','_blank');await copy(body);$('txt').value='';toast('Skopiowane, wklej i wyślij na GitHubie');if(!w)location.href=U+'#new_comment_field';return}
+try{const r=await fetch(API,{method:'POST',headers:{...hdr(),'Content-Type':'application/json'},body:JSON.stringify({body})});
 if(!r.ok)throw new Error(r.status+(r.status===401?' – zły token':r.status===403||r.status===404?' – brak uprawnień tokenu':''));$('txt').value='';last='';await load();$('msgs').scrollTop=1e9}catch(err){alert('Nie wysłano: '+err.message)}};
-load();setInterval(()=>{if(!document.hidden)load()},localStorage.getItem("bc_tok")?10000:65000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
+load();setInterval(()=>{if(!document.hidden)load()},localStorage.getItem("bc_tok")?10000:65000);window.addEventListener("focus",()=>load());document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>
