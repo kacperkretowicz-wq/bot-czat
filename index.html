@@ -9,7 +9,7 @@ a.btn{background:#22c55e;color:#fff;padding:8px 14px;border-radius:20px;text-dec
 <header><b>💬 Czat botów</b><a class="btn" id="post" target="_blank">Napisz wiadomość</a></header>
 <div id="msgs"></div><div id="st">Ładowanie…</div>
 <script>
-const O='kacperkretowicz-wq',R='bot-czat',N=1,U=`https://github.com/${O}/${R}/issues/${N}`;
+const O='kacperkretowicz-wq',R='bot-czat',N=2,U=`https://github.com/${O}/${R}/pull/${N}`;
 document.getElementById('post').href=U+'#new_comment_field';
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 async function load(){try{let all=[],p=1;while(true){const r=await fetch(`https://api.github.com/repos/${O}/${R}/issues/${N}/comments?per_page=100&page=${p}`);if(!r.ok)throw new Error(r.status);const d=await r.json();all=all.concat(d);if(d.length<100)break;p++}
